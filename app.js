@@ -398,3 +398,112 @@ init().catch(err=>{
   setStatus(false, "Lỗi tải dữ liệu (check data/ & GitHub Pages)");
   alert("Lỗi tải dữ liệu. Hãy kiểm tra: 1) data/ có đúng 2 file CSV 2) tên file đúng 3) mở bằng GitHub Pages (không file://).");
 });
+// --- Thêm vào cuối file app.js ---
+
+/**
+ * Hiệu ứng pháo hoa nhỏ trong banner chúc mừng
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    const canvas = document.getElementById('fireworks-canvas');
+    if (!canvas) return; // Nếu không thấy canvas thì dừng
+
+    const ctx = canvas.getContext('2d');
+    const banner = document.getElementById('greeting-banner');
+    let w, h;
+    let particles = [];
+
+    // Cập nhật kích thước canvas theo kích thước banner
+    function resizeCanvas() {
+        w = canvas.width = banner.offsetWidth;
+        h = canvas.height = banner.offsetHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas(); // Gọi lần đầu
+
+    // Hàm tạo màu ngẫu nhiên (ưu tiên tone vàng/đỏ/cam Tết)
+    function randomColor() {
+        const colors = ['#FFD700', '#FFEB3B', '#FF5722', '#F44336', '#FFFDE7'];
+        return colors[Math.floor(Math.random() * colors.length)];
+    }
+
+    // Lớp đối tượng hạt pháo hoa
+    class Particle {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            // Tốc độ và hướng ngẫu nhiên
+            this.vx = (Math.random() - 0.5) * 4;
+            this.vy = (Math.random() - 0.5) * 4;
+            this.alpha = 1; // Độ trong suốt ban đầu
+            this.color = randomColor();
+            this.radius = Math.random() * 2 + 1; // Kích thước hạt
+            this.decay = Math.random() * 0.02 + 0.015; // Tốc độ mờ dần
+        }
+
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.vy += 0.05; // Thêm một chút trọng lực nhẹ
+            this.alpha -= this.decay; // Mờ dần theo thời gian
+        }
+
+        draw(ctx) {
+            ctx.save();
+            ctx.globalAlpha = this.alpha;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = this.color;
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    // Hàm tạo vụ nổ tại vị trí x, y
+    function createExplosion(x, y) {
+        // Tạo khoảng 15-25 hạt cho mỗi vụ nổ
+        const particleCount = Math.floor(Math.random() * 10) + 15;
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle(x, y));
+        }
+    }
+
+    // Vòng lặp chuyển động chính
+    function animate() {
+        // Xóa canvas với một lớp mờ nhẹ để tạo hiệu ứng vệt đuôi
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.fillRect(0, 0, w, h);
+        ctx.globalCompositeOperation = 'lighter'; // Chế độ hòa trộn màu cho sáng hơn
+
+        // Cập nhật và vẽ các hạt
+        for (let i = particles.length - 1; i >= 0; i--) {
+            particles[i].update();
+            particles[i].draw(ctx);
+
+            // Xóa hạt khi nó đã mờ hẳn
+            if (particles[i].alpha <= 0) {
+                particles.splice(i, 1);
+            }
+        }
+
+        requestAnimationFrame(animate);
+    }
+
+    // Tự động tạo các vụ nổ ngẫu nhiên
+    function autoExplode() {
+        // Chọn vị trí ngẫu nhiên trong vùng banner
+        const x = Math.random() * w;
+        // Ưu tiên nổ ở nửa trên hoặc giữa để trông đẹp hơn
+        const y = Math.random() * h * 0.8 + (h * 0.1); 
+        createExplosion(x, y);
+
+        // Hẹn giờ vụ nổ tiếp theo (ngẫu nhiên từ 0.3s đến 1.5s)
+        setTimeout(autoExplode, Math.random() * 1200 + 300);
+    }
+
+    // Bắt đầu
+    animate();
+    autoExplode();
+    // Tạo ngay một vụ nổ khi mới vào
+    createExplosion(w / 2, h / 2);
+});
